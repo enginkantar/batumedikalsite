@@ -37,8 +37,8 @@
 ### B. Typography
 
 **Font Families:**
-- Primary: 'Inter' (Google Fonts) - clean, modern, excellent Turkish character support
-- Headings: 'Poppins' (Google Fonts) - professional, distinctive for headers
+- Primary: System Sans-serif (Arial, Helvetica, Segoe UI) - clean, modern, excellent Turkish character support
+- Headings: System Serif (Georgia, Times New Roman) - professional, distinctive for headers
 
 **Hierarchy:**
 - H1: 3.5rem (56px) / 700 weight / -0.02em tracking

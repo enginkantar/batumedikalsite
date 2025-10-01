@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,41 @@ import { useToast } from "@/hooks/use-toast";
 import stethoscopeImage from "@assets/generated_images/Medical_product_-_stethoscope_238a0018.png";
 import bpMonitorImage from "@assets/generated_images/Blood_pressure_monitor_product_51791084.png";
 
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  image: string;
+  category: string;
+}
+
+const STORAGE_KEY = "batu_medikal_products";
+
+const initialProducts: Product[] = [
+  {
+    id: "1",
+    name: "Profesyonel Stetoskop",
+    description: "Yüksek kaliteli çift başlıklı stetoskop",
+    price: "450.00",
+    image: stethoscopeImage,
+    category: "Tanı Ekipmanları",
+  },
+  {
+    id: "2",
+    name: "Dijital Tansiyon Aleti",
+    description: "Otomatik koldan tansiyon ölçüm cihazı",
+    price: "320.00",
+    image: bpMonitorImage,
+    category: "Tansiyon Aletleri",
+  },
+];
+
 export default function AdminProducts() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -35,27 +66,28 @@ export default function AdminProducts() {
     image: "",
   });
 
-  //todo: remove mock functionality
-  const [products] = useState([
-    {
-      id: "1",
-      name: "Profesyonel Stetoskop",
-      description: "Yüksek kaliteli çift başlıklı stetoskop",
-      price: "450.00",
-      image: stethoscopeImage,
-      category: "Tanı Ekipmanları",
-    },
-    {
-      id: "2",
-      name: "Dijital Tansiyon Aleti",
-      description: "Otomatik koldan tansiyon ölçüm cihazı",
-      price: "320.00",
-      image: bpMonitorImage,
-      category: "Tansiyon Aletleri",
-    },
-  ]);
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        setProducts(JSON.parse(stored));
+      } catch (error) {
+        console.error("Error loading products from localStorage:", error);
+        setProducts(initialProducts);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProducts));
+      }
+    } else {
+      setProducts(initialProducts);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProducts));
+    }
+  }, []);
 
-  const handleOpenDialog = (product?: any) => {
+  const saveToLocalStorage = (updatedProducts: Product[]) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProducts));
+    setProducts(updatedProducts);
+  };
+
+  const handleOpenDialog = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
@@ -80,16 +112,37 @@ export default function AdminProducts() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Product saved:', formData);
-    toast({
-      title: editingProduct ? "Ürün güncellendi" : "Ürün eklendi",
-      description: "Değişiklikler başarıyla kaydedildi.",
-    });
+    
+    if (editingProduct) {
+      const updatedProducts = products.map((p) =>
+        p.id === editingProduct.id
+          ? { ...editingProduct, ...formData }
+          : p
+      );
+      saveToLocalStorage(updatedProducts);
+      toast({
+        title: "Ürün güncellendi",
+        description: "Değişiklikler başarıyla kaydedildi.",
+      });
+    } else {
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        ...formData,
+      };
+      const updatedProducts = [...products, newProduct];
+      saveToLocalStorage(updatedProducts);
+      toast({
+        title: "Ürün eklendi",
+        description: "Yeni ürün başarıyla eklendi.",
+      });
+    }
+    
     setDialogOpen(false);
   };
 
   const handleDelete = (id: string) => {
-    console.log('Delete product:', id);
+    const updatedProducts = products.filter((p) => p.id !== id);
+    saveToLocalStorage(updatedProducts);
     toast({
       title: "Ürün silindi",
       description: "Ürün başarıyla silindi.",
